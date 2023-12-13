@@ -12,7 +12,12 @@ import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.Base64;
+import java.util.Date;
 import java.util.Random;
 
 public class DashBoard {
@@ -26,7 +31,6 @@ public class DashBoard {
     private Label message;
     @FXML
     private ChoiceBox<String> choice;
-
 
     public static final String ALPHABET = "abcdefghijklmnopqrstuvwxyz";
     private SecretKey secretkey;
@@ -131,7 +135,7 @@ public class DashBoard {
     }
 
     @FXML
-    public void export(){
+    public void exportTextAndResultToFile(){
         String textContent = "Text: "+text.getText()+ "\n";
         String resultContent = "Result: "+result.getText()+ "\n";
         FileChooser fileChooser = new FileChooser();
@@ -152,7 +156,7 @@ public class DashBoard {
         }
     }
     @FXML
-    public void exportKey(){
+    public void exportKeyToFile(){
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Save Encrypted Key File");
         if(algorithm.equals("cc")){
@@ -163,7 +167,7 @@ public class DashBoard {
             if (file != null) {
                 try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
                     writer.write(encryptedContent);
-                    message.setText("Export successful!");
+                    message.setText("Export to file and DB successfully!");
                 } catch (IOException e) {
                     message.setText("Export failure!" + e.getMessage());
                 }
@@ -193,7 +197,6 @@ public class DashBoard {
             message.setText("Please select an algorithm before export key.");
         }
     }
-
     public String keyEncryptAES(String keyContent) {
         try {
             Cipher cipher = Cipher.getInstance("AES");
@@ -205,7 +208,6 @@ public class DashBoard {
             return null;
         }
     }
-
     @FXML
     public void loadKey(){
         if(algorithm.equals("cc")){
@@ -269,7 +271,8 @@ public class DashBoard {
         if(algorithm.equals("AES") || algorithm.equals("DES")){
             KeyGenerator keyGen = KeyGenerator.getInstance(algorithm);
             this.setSecretkey(keyGen.generateKey());
-            key.setText(Base64.getEncoder().encodeToString(secretkey.getEncoded()));
+            String keyString = Base64.getEncoder().encodeToString(secretkey.getEncoded());
+            key.setText(keyString);
             message.setText("A new key has been generated for you.");
         } else if (algorithm.equals("cc")) {
             Random random = new Random();
@@ -278,6 +281,40 @@ public class DashBoard {
             message.setText("Please select an algorithm before generate a key.");
         }
 
+    }
+    @FXML
+    public void AllToDB() throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
+        String JDBC_URL = "jdbc:mysql://database-1.ch0uqgjn65pq.us-east-1.rds.amazonaws.com:3306/mswdev2023cloudandsecurity";
+        String USERNAME = "admin";
+        String PASSWORD = "adminadmin";
+        String encryptKey ="";
+        String textContent= text.getText();
+        String resultContent =result.getText();
+        if (algorithm.equals("cc")){
+            encryptKey = this.keyEncryptAES(key.getText());
+        } else if (algorithm.equals("AES")||algorithm.equals("DES")) {
+            Cipher cipher = Cipher.getInstance("AES");
+            cipher.init(Cipher.ENCRYPT_MODE, generateSecretKey("MySecretPassword"));
+            byte[] encryptedKey = cipher.doFinal(this.secretkey.getEncoded());
+            encryptKey = Base64.getEncoder().encodeToString(encryptedKey);
+        }
+        try (Connection connection = DriverManager.getConnection(JDBC_URL, USERNAME, PASSWORD)) {
+            String insertQuery = "INSERT INTO `allData` (`text`, `key`, `result`) VALUES (?, ?, ?)";
+            try (PreparedStatement insertStatement = connection.prepareStatement(insertQuery)) {
+                insertStatement.setString(1, textContent);
+                insertStatement.setString(2, encryptKey);
+                insertStatement.setString(3, resultContent);
+                int rowsAffected = insertStatement.executeUpdate();
+                if (rowsAffected > 0) {
+                    message.setText("Successfully store all data to DB");
+                } else {
+                    message.setText("Failed to store all data to DB");
+                }
+
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
     }
     public void DESEncrypt(String inputText) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
         Cipher desCipher = Cipher.getInstance("DES");
@@ -351,5 +388,6 @@ public class DashBoard {
     public void setSecretkey(SecretKey secretkey) {
         this.secretkey = secretkey;
     }
+
 
 }
