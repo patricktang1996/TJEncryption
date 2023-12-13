@@ -8,9 +8,9 @@ import javafx.scene.control.TextField;
 import java.sql.*;
 
 public class CreateAccount {
-    private static final String JDBC_URL = "jdbc:mysql://127.0.0.1:3306/MSwDev2023CloudAndSecurity";
-    private static final String USERNAME = "root";
-    private static String PASSWORD = "";
+    private static final String JDBC_URL = "jdbc:mysql://database-1.ch0uqgjn65pq.us-east-1.rds.amazonaws.com:3306/mswdev2023cloudandsecurity";
+    private static final String USERNAME = "admin";
+    private static String PASSWORD = "adminadmin";
     @FXML
     private TextField username;
     @FXML
@@ -39,7 +39,7 @@ public class CreateAccount {
         String hashedPassword = ph.hashPassword(pass);
 
         try (Connection connection = DriverManager.getConnection(JDBC_URL, USERNAME, PASSWORD)) {
-            String insertQuery = "INSERT INTO Users (userName, userPass) VALUES (?, ?)";
+            String insertQuery = "INSERT INTO users (userName, userPass) VALUES (?, ?)";
             try (PreparedStatement insertStatement = connection.prepareStatement(insertQuery)) {
                 insertStatement.setString(1, acc);
                 insertStatement.setString(2, hashedPassword);

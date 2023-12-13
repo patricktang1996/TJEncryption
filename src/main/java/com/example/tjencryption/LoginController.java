@@ -6,9 +6,9 @@ import javafx.scene.control.TextField;
 import java.sql.*;
 
 public class LoginController {
-    private static final String JDBC_URL = "jdbc:mysql://127.0.0.1:3306/MSwDev2023CloudAndSecurity";
-    private static final String USERNAME = "root";
-    private static String PASSWORD = "";
+    private static final String JDBC_URL = "jdbc:mysql://database-1.ch0uqgjn65pq.us-east-1.rds.amazonaws.com:3306/mswdev2023cloudandsecurity";
+    private static final String USERNAME = "admin";
+    private static String PASSWORD = "adminadmin";
 
     PasswordHashing ph= new PasswordHashing();
 
@@ -38,7 +38,7 @@ public class LoginController {
         String hashedPassword = ph.hashPassword(pass);
 
         try (Connection connection = DriverManager.getConnection(JDBC_URL, USERNAME, PASSWORD)) {
-            String loginQuery = "SELECT * FROM Users WHERE userName = ? AND userPass = ?";
+            String loginQuery = "SELECT * FROM users WHERE userName = ? AND userPass = ?";
             try (PreparedStatement loginStatement = connection.prepareStatement(loginQuery)) {
                 loginStatement.setString(1, acc);
                 //loginStatement.setString(2, pass);
