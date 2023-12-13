@@ -115,7 +115,7 @@ public class DashBoard {
         }
     }
 
-    private String keyDecryptAES(String encryptedContent) {
+    public String keyDecryptAES(String encryptedContent) {
         try {
             Cipher cipher = Cipher.getInstance("AES");
             cipher.init(Cipher.DECRYPT_MODE, generateSecretKey("MySecretPassword"));
@@ -194,7 +194,7 @@ public class DashBoard {
         }
     }
 
-    private String keyEncryptAES(String keyContent) {
+    public String keyEncryptAES(String keyContent) {
         try {
             Cipher cipher = Cipher.getInstance("AES");
             cipher.init(Cipher.ENCRYPT_MODE, generateSecretKey("MySecretPassword"));
@@ -239,7 +239,7 @@ public class DashBoard {
         }
     }
 
-    private SecretKey generateSecretKey(String key) {
+    public SecretKey generateSecretKey(String key) {
         byte[] keyBytes = key.getBytes(StandardCharsets.UTF_8);
         return new SecretKeySpec(keyBytes, "AES");
     }
