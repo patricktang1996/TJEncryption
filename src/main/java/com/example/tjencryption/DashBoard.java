@@ -1,13 +1,11 @@
 package com.example.tjencryption;
 
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 import javax.crypto.*;
-import javax.crypto.spec.DESKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -217,7 +215,7 @@ public class DashBoard {
         } else if (selectedAlgorithm.equals("AES")) {
             key.setText("");
             algorithm = "AES";
-            message.setText("You choose AES.");
+            message.setText("AES: Click a button to generate or import a key.");
             loadKey.setVisible(true);
             exportKey.setVisible(true);
             newKey.setVisible(true);
@@ -225,7 +223,7 @@ public class DashBoard {
             importKey.setVisible(false);
         } else if (selectedAlgorithm.equals("DES")) {
             algorithm = "DES";
-            message.setText("You choose DES.");
+            message.setText("DES: Click a button to generate or import a key..");
             loadKey.setVisible(true);
             exportKey.setVisible(true);
             newKey.setVisible(true);
