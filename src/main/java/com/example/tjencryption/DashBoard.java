@@ -13,6 +13,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Base64;
+import java.util.Random;
 
 public class DashBoard {
     @FXML
@@ -25,14 +26,7 @@ public class DashBoard {
     private Label message;
     @FXML
     private ChoiceBox<String> choice;
-    @FXML
-    private Button exportKey;
-    @FXML
-    private Button importKey;
-    @FXML
-    private Button newKey;
-    @FXML
-    private Button loadKey;
+
 
     public static final String ALPHABET = "abcdefghijklmnopqrstuvwxyz";
     private SecretKey secretkey;
@@ -41,9 +35,9 @@ public class DashBoard {
     public void encrypt() throws NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, InvalidKeySpecException, BadPaddingException, InvalidKeyException {
         String inputText = text.getText();
         String inputKey = key.getText();
-        if(inputKey.isEmpty() && secretkey == null && inputText.isEmpty()){
+        if(inputKey.isEmpty()  && inputText.isEmpty()){
             message.setText("Please type in or import text and key.");
-        }else if(inputKey.isEmpty() && secretkey == null){
+        }else if(inputKey.isEmpty()){
             message.setText("Please type in or import the key.");
         }else if(inputText.isEmpty()){
             message.setText("Please type in or import the text.");
@@ -62,9 +56,9 @@ public class DashBoard {
     public void decrypt() throws NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, InvalidKeySpecException, BadPaddingException, InvalidKeyException {
         String inputText = text.getText();
         String inputKey = key.getText();
-        if(inputKey.isEmpty() && secretkey == null && inputText.isEmpty()){
+        if(inputKey.isEmpty() && inputText.isEmpty()){
             message.setText("Please type in or import text and key.");
-        }else if(inputKey.isEmpty() && secretkey == null){
+        }else if(inputKey.isEmpty()){
             message.setText("Please type in or import the key.");
         }else if(inputText.isEmpty()){
             message.setText("Please type in or import the text.");
@@ -104,28 +98,38 @@ public class DashBoard {
     }
     @FXML
     public void importKey(){
-        String importKey ="";
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Please select the file to import");
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Text Files", "*.txt"));
+        fileChooser.setTitle("Choose Encrypted File to Import");
         File file = fileChooser.showOpenDialog(new Stage());
         if (file != null) {
             try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-                StringBuilder content = new StringBuilder();
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    content.append(line).append(System.lineSeparator());
-                }
-                message.setText("Import successful！");
-                importKey = content.toString().trim();
-            } catch (IOException e) {
-                message.setText("Import failure：" + e.getMessage());
+                String encryptedContent = reader.readLine();
+                String decryptedContent = keyDecryptAES(encryptedContent);
+                key.setText(decryptedContent);
+                message.setText("Import successful!");
+            } catch (Exception e) {
+                message.setText("Import failure: " + e.getMessage());
             }
         } else {
-            System.out.println("User cancels import.");
+            message.setText("User cancels import.");
         }
-        key.setText(importKey);
     }
+
+    private String keyDecryptAES(String encryptedContent) {
+        try {
+            Cipher cipher = Cipher.getInstance("AES");
+            cipher.init(Cipher.DECRYPT_MODE, generateSecretKey("MySecretPassword"));
+
+            byte[] encryptedBytes = Base64.getDecoder().decode(encryptedContent);
+            byte[] decryptedBytes = cipher.doFinal(encryptedBytes);
+
+            return new String(decryptedBytes, StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     @FXML
     public void export(){
         String textContent = "Text: "+text.getText()+ "\n";
@@ -151,49 +155,87 @@ public class DashBoard {
     public void exportKey(){
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Save Encrypted Key File");
-        FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("Encrypted Key Files (*.encrypted)", "*.encrypted");
-        fileChooser.getExtensionFilters().add(extFilter);
-        File file = fileChooser.showSaveDialog(new Stage());
-        if (file != null) {
-            try {
-                Cipher cipher = Cipher.getInstance("AES");
-                cipher.init(Cipher.ENCRYPT_MODE, generateSecretKey("MySecretPassword"));
-                byte[] encryptedKey = cipher.doFinal(this.secretkey.getEncoded());
-                try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file))) {
-                    oos.writeObject(encryptedKey);
-                    message.setText("Encrypted Key export successful!");
+        if(algorithm.equals("cc")){
+            String keyContent = key.getText();
+            String encryptedContent = keyEncryptAES(keyContent);
+            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Text Files", "*.txt"));
+            File file = fileChooser.showSaveDialog(new Stage());
+            if (file != null) {
+                try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+                    writer.write(encryptedContent);
+                    message.setText("Export successful!");
+                } catch (IOException e) {
+                    message.setText("Export failure!" + e.getMessage());
                 }
-            } catch (Exception e) {
-                message.setText("Encrypted Key export failure: " + e.getMessage());
+            } else {
+                message.setText("User cancels export.");
             }
-        } else {
-            message.setText("User canceled encrypted key export.");
+        } else if (algorithm.equals("AES") || algorithm.equals("DES")) {
+            FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("Encrypted Key Files (*.encrypted)", "*.encrypted");
+            fileChooser.getExtensionFilters().add(extFilter);
+            File file = fileChooser.showSaveDialog(new Stage());
+            if (file != null) {
+                try {
+                    Cipher cipher = Cipher.getInstance("AES");
+                    cipher.init(Cipher.ENCRYPT_MODE, generateSecretKey("MySecretPassword"));
+                    byte[] encryptedKey = cipher.doFinal(this.secretkey.getEncoded());
+                    try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file))) {
+                        oos.writeObject(encryptedKey);
+                        message.setText("Encrypted Key export successful!");
+                    }
+                } catch (Exception e) {
+                    message.setText("Encrypted Key export failure: " + e.getMessage());
+                }
+            } else {
+                message.setText("User canceled encrypted key export.");
+            }
+        } else{
+            message.setText("Please select an algorithm before export key.");
+        }
+    }
+
+    private String keyEncryptAES(String keyContent) {
+        try {
+            Cipher cipher = Cipher.getInstance("AES");
+            cipher.init(Cipher.ENCRYPT_MODE, generateSecretKey("MySecretPassword"));
+            byte[] encryptedBytes = cipher.doFinal(keyContent.getBytes(StandardCharsets.UTF_8));
+            return Base64.getEncoder().encodeToString(encryptedBytes);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
         }
     }
 
     @FXML
     public void loadKey(){
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Import Encrypted Key File");
-        FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("Encrypted Key Files (*.encrypted)", "*.encrypted");
-        fileChooser.getExtensionFilters().add(extFilter);
-        File file = fileChooser.showOpenDialog(new Stage());
-        if (file != null) {
-            try {
-                byte[] encryptedKey;
-                try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
-                    encryptedKey = (byte[]) ois.readObject();
+        if(algorithm.equals("cc")){
+            this.importKey();
+        } else if (algorithm.equals("AES") || algorithm.equals("DES")) {
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Import Encrypted Key File");
+            FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("Encrypted Key Files (*.encrypted)", "*.encrypted");
+            fileChooser.getExtensionFilters().add(extFilter);
+            File file = fileChooser.showOpenDialog(new Stage());
+            if (file != null) {
+                try {
+                    byte[] encryptedKey;
+                    try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
+                        encryptedKey = (byte[]) ois.readObject();
+                    }
+                    Cipher cipher = Cipher.getInstance("AES");
+                    cipher.init(Cipher.DECRYPT_MODE, generateSecretKey("MySecretPassword")); // Use the same encryption key used for encryption
+                    byte[] decryptedKeyBytes = cipher.doFinal(encryptedKey);
+                    this.secretkey = new SecretKeySpec(decryptedKeyBytes, "AES");
+                    key.setText(Base64.getEncoder().encodeToString(secretkey.getEncoded()));
+                    message.setText("Encrypted Key import and decryption successful!");
+                } catch (Exception e) {
+                    message.setText("Encrypted Key import and decryption failure: " + e.getMessage());
                 }
-                Cipher cipher = Cipher.getInstance("AES");
-                cipher.init(Cipher.DECRYPT_MODE, generateSecretKey("MySecretPassword")); // Use the same encryption key used for encryption
-                byte[] decryptedKeyBytes = cipher.doFinal(encryptedKey);
-                this.secretkey = new SecretKeySpec(decryptedKeyBytes, "AES");
-                message.setText("Encrypted Key import and decryption successful!");
-            } catch (Exception e) {
-                message.setText("Encrypted Key import and decryption failure: " + e.getMessage());
+            } else {
+                message.setText("User canceled encrypted key import.");
             }
-        } else {
-            message.setText("User canceled encrypted key import.");
+        } else{
+            message.setText("Please select an algorithm before import key.");
         }
     }
 
@@ -206,37 +248,36 @@ public class DashBoard {
         String selectedAlgorithm = choice.getValue();
         if (selectedAlgorithm.equals("Caesar cipher")){
             algorithm = "cc";
+            key.setText("");
+            result.setText("");
             message.setText("Caesar cipher: only encrypt and decrypt plain alphabetic text.");
-            loadKey.setVisible(false);
-            exportKey.setVisible(false);
-            newKey.setVisible(false);
-            key.setVisible(true);
-            importKey.setVisible(true);
+
         } else if (selectedAlgorithm.equals("AES")) {
             key.setText("");
+            result.setText("");
             algorithm = "AES";
             message.setText("AES: Click a button to generate or import a key.");
-            loadKey.setVisible(true);
-            exportKey.setVisible(true);
-            newKey.setVisible(true);
-            key.setVisible(false);
-            importKey.setVisible(false);
         } else if (selectedAlgorithm.equals("DES")) {
+            key.setText("");
+            result.setText("");
             algorithm = "DES";
             message.setText("DES: Click a button to generate or import a key..");
-            loadKey.setVisible(true);
-            exportKey.setVisible(true);
-            newKey.setVisible(true);
-            key.setText("");
-            key.setVisible(false);
-            importKey.setVisible(false);
         }
     }
     @FXML
     public void generateKey() throws NoSuchAlgorithmException {
-        KeyGenerator keyGen = KeyGenerator.getInstance(algorithm);
-        this.setSecretkey(keyGen.generateKey());
-        message.setText("A new key has been generated for you.");
+        if(algorithm.equals("AES") || algorithm.equals("DES")){
+            KeyGenerator keyGen = KeyGenerator.getInstance(algorithm);
+            this.setSecretkey(keyGen.generateKey());
+            key.setText(Base64.getEncoder().encodeToString(secretkey.getEncoded()));
+            message.setText("A new key has been generated for you.");
+        } else if (algorithm.equals("cc")) {
+            Random random = new Random();
+            key.setText(String.valueOf(random.nextInt(1,26)));
+        } else {
+            message.setText("Please select an algorithm before generate a key.");
+        }
+
     }
     public void DESEncrypt(String inputText) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
         Cipher desCipher = Cipher.getInstance("DES");
