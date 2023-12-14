@@ -6,11 +6,12 @@ import javafx.scene.control.TextField;
 import java.sql.*;
 
 public class LoginController {
-    private static final String JDBC_URL = "jdbc:mysql://database-1.cqbnfgzzclyo.ap-southeast-2.rds.amazonaws.com:3306/mswdev2023cloudandsecurity";
+    private static final String JDBC_URL = "jdbc:mysql://database-1.cqbnfgzzclyo.ap-southeast-2.rds.amazonaws.com:" +
+            "3306/mswdev2023cloudandsecurity";
     private static final String USERNAME = "admin";
     private static String PASSWORD = "adminadmin";
 
-    PasswordHashing ph= new PasswordHashing();
+    Hashing ph= new Hashing();
 
     @FXML
     private TextField username;
@@ -35,16 +36,14 @@ public class LoginController {
     private void performLogin() {
         String acc = username.getText();
         String pass = password.getText();
-        String hashedPassword = ph.hashPassword(pass);
-
+        String hashedPassword = Hashing.hashing(pass);
+        String hashedName = Hashing.hashing(acc);
         try (Connection connection = DriverManager.getConnection(JDBC_URL, USERNAME, PASSWORD)) {
             String loginQuery = "SELECT * FROM user WHERE userName = ? AND userPass = ?";
             try (PreparedStatement loginStatement = connection.prepareStatement(loginQuery)) {
-                loginStatement.setString(1, acc);
-                //loginStatement.setString(2, pass);
+                loginStatement.setString(1, hashedName);
                 loginStatement.setString(2, hashedPassword);
                 ResultSet resultSet = loginStatement.executeQuery();
-
                 if (resultSet.next()) {
                     alertText.setText("Successful login");
                     Login.changeStage("dashboard-view.fxml");
@@ -52,7 +51,6 @@ public class LoginController {
                 } else {
                     alertText.setText("Wrong acc/password");
                 }
-
                 resultSet.close();
             }
         } catch (SQLException ex) {

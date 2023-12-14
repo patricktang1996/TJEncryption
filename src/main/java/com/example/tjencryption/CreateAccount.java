@@ -1,6 +1,5 @@
 package com.example.tjencryption;
 
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
@@ -18,8 +17,6 @@ public class CreateAccount {
     @FXML
     private Label alertText;
 
-    PasswordHashing ph= new PasswordHashing();
-
     @FXML
     protected void onCreateClick(){
         String acc = username.getText();
@@ -35,19 +32,17 @@ public class CreateAccount {
     private void performCreate() {
         String acc = username.getText();
         String pass = password.getText();
+        String hashedPassword = Hashing.hashing(pass);
+        String hashedName = Hashing.hashing(acc);
         try (Connection connection = DriverManager.getConnection(JDBC_URL, USERNAME, PASSWORD)) {
-            if (isUsernameExists(connection, acc)) {
+            if (isUsernameExists(connection, hashedName)) {
                 alertText.setText("Username already exists. Choose a different username.");
             } else {
-                String hashedPassword = ph.hashPassword(pass);
-
                 String insertQuery = "INSERT INTO user (userName, userPass) VALUES (?, ?)";
                 try (PreparedStatement insertStatement = connection.prepareStatement(insertQuery)) {
-                    insertStatement.setString(1, acc);
+                    insertStatement.setString(1, hashedName);
                     insertStatement.setString(2, hashedPassword);
-
                     int rowsAffected = insertStatement.executeUpdate();
-
                     if (rowsAffected > 0) {
                         alertText.setText("User account created successfully");
                     } else {
