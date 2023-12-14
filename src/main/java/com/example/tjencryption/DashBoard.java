@@ -284,7 +284,7 @@ public class DashBoard {
     }
     @FXML
     public void AllToDB() throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
-        String JDBC_URL = "jdbc:mysql://database-1.ch0uqgjn65pq.us-east-1.rds.amazonaws.com:3306/mswdev2023cloudandsecurity";
+        String JDBC_URL = "jdbc:mysql://database-1.cqbnfgzzclyo.ap-southeast-2.rds.amazonaws.com:3306/mswdev2023cloudandsecurity";
         String USERNAME = "admin";
         String PASSWORD = "adminadmin";
         String encryptKey ="";
