@@ -263,7 +263,7 @@ public class DashBoard {
             key.setText("");
             result.setText("");
             algorithm = "DES";
-            message.setText("DES: Click a button to generate or import a key..");
+            message.setText("DES: Click a button to generate or import a key.");
         }
     }
     @FXML
