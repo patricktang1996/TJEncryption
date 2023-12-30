@@ -6,7 +6,7 @@ import javafx.scene.control.TextField;
 import java.sql.*;
 
 public class LoginController {
-    private static final String JDBC_URL = "jdbc:mysql://database-1.cqbnfgzzclyo.ap-southeast-2.rds.amazonaws.com:" +
+    private static final String JDBC_URL = "jdbc:mysql://database-2.cqbnfgzzclyo.ap-southeast-2.rds.amazonaws.com:" +
             "3306/mswdev2023cloudandsecurity";
     private static final String USERNAME = "admin";
     private static String PASSWORD = "adminadmin";
